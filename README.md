@@ -21,8 +21,5 @@ https://adventofcode.com/2024
 │   │   └── 25.txt
 │   ├── go.mod
 │   └── utils.go
-├── hello
-│   ├── go.mod
-│   └── hello.go
 └── README.md
 ```
