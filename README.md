@@ -7,19 +7,8 @@ https://adventofcode.com/2024
 ## Structure of repository
 
 ```bash
-├── days
-│   ├── 01.go
-│   ├── 02.go
-│   ├── 03.go
-│   ├── ...
-│   ├── 25.go
-│   ├── data
-│   │   ├── 01.txt
-│   │   ├── 02.txt
-│   │   ├── 03.txt
-│   │   ├── ...
-│   │   └── 25.txt
-│   ├── go.mod
-│   └── utils.go
+├── data
+├── days_go
+├── days_python # If I have time, I'll try to solve the problems in Python too
 └── README.md
 ```

@@ -59,7 +59,7 @@ func getSimilarityScore(left []int, occurences map[int]int) int {
 }
 
 func main() {
-	left, right := readNumberPairs("data/01.txt")
+	left, right := readNumberPairs("../data/01.txt")
 	part1 := getDistance(left, right)
 	fmt.Println(part1)
 
