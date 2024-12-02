@@ -7,13 +7,6 @@ import (
 	"strings"
 )
 
-func absDiffInt(x, y int) int {
-	if x < y {
-		return y - x
-	}
-	return x - y
-}
-
 func readNumberPairs(filename string) ([]int, []int) {
 	var left []int
 	var right []int

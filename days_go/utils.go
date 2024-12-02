@@ -34,3 +34,10 @@ func getInputLines(filename string) []string {
 	file.Close()
 	return result
 }
+
+func absDiffInt(x, y int) int {
+	if x < y {
+		return y - x
+	}
+	return x - y
+}
