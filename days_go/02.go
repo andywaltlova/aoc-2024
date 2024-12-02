@@ -35,13 +35,35 @@ func isLevelSafe(level []int) bool {
 	return true
 }
 
+func checkLevelWithDampener(level []int) bool {
+	for i := 0; i < len(level); i++ {
+		// Make copy without current number
+		newLevel := make([]int, len(level))
+		copy(newLevel, level)
+
+		if i == len(level)-1 {
+			newLevel = newLevel[:i]
+		} else {
+			newLevel = append(newLevel[:i], newLevel[i+1:]...)
+		}
+		if isLevelSafe(newLevel) {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
 	levels := readLevels("../data/02.txt")
-	part1 := 0
+	part1, part2 := 0, 0
 	for _, level := range levels {
 		if isLevelSafe(level) {
 			part1++
+			part2++
+		} else if checkLevelWithDampener(level) {
+			// Not best solution, thre is probably better solution checking just problematic numbers
+			part2++
 		}
 	}
-	fmt.Println(part1)
+	fmt.Println(part1, part2)
 }
