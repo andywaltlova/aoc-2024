@@ -56,13 +56,15 @@ func checkLevelsWithDampener(report []int) bool {
 func main() {
 	reports := readReports("../data/02.txt")
 	part1, part2 := 0, 0
-	for _, level := range reports {
-		if isReportSafe(level) {
+	for _, report := range reports {
+		if isReportSafe(report) {
 			part1++
 			part2++
-		} else if checkLevelsWithDampener(level) {
+			fmt.Println(report)
+		} else if checkLevelsWithDampener(report) {
 			// Not best solution, thre is probably better solution checking just problematic numbers
 			part2++
+			fmt.Println(report)
 		}
 	}
 	fmt.Println(part1, part2)
