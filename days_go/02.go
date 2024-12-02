@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func readLevels(filename string) [][]int {
+func readReports(filename string) [][]int {
 	var levels [][]int
 	lines := getInputLines(filename)
 	for _, line := range lines {
@@ -21,7 +21,7 @@ func readLevels(filename string) [][]int {
 	return levels
 }
 
-func isLevelSafe(level []int) bool {
+func isReportSafe(level []int) bool {
 	isAscending := level[0] < level[1]
 	for i, num := range level {
 		if i == len(level)-1 {
@@ -35,18 +35,18 @@ func isLevelSafe(level []int) bool {
 	return true
 }
 
-func checkLevelWithDampener(level []int) bool {
-	for i := 0; i < len(level); i++ {
+func checkLevelsWithDampener(report []int) bool {
+	for i := 0; i < len(report); i++ {
 		// Make copy without current number
-		newLevel := make([]int, len(level))
-		copy(newLevel, level)
+		newReport := make([]int, len(report))
+		copy(newReport, report)
 
-		if i == len(level)-1 {
-			newLevel = newLevel[:i]
+		if i == len(report)-1 {
+			newReport = newReport[:i]
 		} else {
-			newLevel = append(newLevel[:i], newLevel[i+1:]...)
+			newReport = append(newReport[:i], newReport[i+1:]...)
 		}
-		if isLevelSafe(newLevel) {
+		if isReportSafe(newReport) {
 			return true
 		}
 	}
@@ -54,13 +54,13 @@ func checkLevelWithDampener(level []int) bool {
 }
 
 func main() {
-	levels := readLevels("../data/02.txt")
+	reports := readReports("../data/02.txt")
 	part1, part2 := 0, 0
-	for _, level := range levels {
-		if isLevelSafe(level) {
+	for _, level := range reports {
+		if isReportSafe(level) {
 			part1++
 			part2++
-		} else if checkLevelWithDampener(level) {
+		} else if checkLevelsWithDampener(level) {
 			// Not best solution, thre is probably better solution checking just problematic numbers
 			part2++
 		}
