@@ -22,6 +22,12 @@ func matchMulPattern(content string) []string {
 	return r.FindAllString(content, -1)
 }
 
+func matchEnabledMulPattern(content string) []string {
+	pattern := "mul\\(\\d+,\\d+\\)|do\\(\\)|don't\\(\\)"
+	r, _ := regexp.Compile(pattern)
+	return r.FindAllString(content, -1)
+}
+
 func getNumsFromMatch(match string) (int, int) {
 	r, _ := regexp.Compile("\\d+")
 	nums := r.FindAllString(match, -1)
@@ -40,9 +46,26 @@ func part1(content string) int {
 	return result
 }
 
+func part2(content string) int {
+	result := 0
+	enabled := true
+	matches := matchEnabledMulPattern(content)
+	for _, match := range matches {
+		if match == "do()" {
+			enabled = true
+		} else if match == "don't()" {
+			enabled = false
+		} else if enabled {
+			num1, num2 := getNumsFromMatch(match)
+			result += num1 * num2
+		}
+	}
+	return result
+}
+
 func main() {
-	filepath := "../data/03.txt"
+	filepath := "../data/03_test.txt"
 	content := readFileContent(filepath)
 	fmt.Println(part1(content))
-
+	fmt.Println(part2(content))
 }
