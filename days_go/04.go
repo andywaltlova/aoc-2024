@@ -65,7 +65,6 @@ func part2(grid []string) int {
 					dL := move(grid, x+downLeft[0], y+downLeft[1], downLeft, 0, string(c[3]))
 
 					if sum([]int{dR, uR, dL, uL}) == 4 {
-						fmt.Println(x, y)
 						count += 1
 						break
 					}
