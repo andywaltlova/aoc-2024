@@ -103,27 +103,28 @@ type seenCoordinate struct {
 	direction  int
 }
 
-func part2(guard *guard, input []string) int {
-	loops := 0
+func part2(guard *guard, input []string) (int, int) {
+	obstacles := make(map[coordinate]struct{})
 	guardFinished := false
 	previousPosition := guard.position
 	for !guardFinished {
 		guardMoved, guardTurned := guard.move()
 		guardFinished = !(guardMoved || guardTurned)
-		// Try Brute force solution: try placing obstacle and see if guards return to start
-		if guardMoved {
+		if guardMoved && previousPosition != guard.startPos {
 			newGrid := getGrid(input)
 			newGrid[guard.position] = "#"
 			newGrid[guard.startPos] = "."
 			newG := newGuard(previousPosition, guard.direction, newGrid)
+
 			seen := make(map[seenCoordinate]struct{})
 			seen[seenCoordinate{coordinate: previousPosition, direction: guard.direction}] = struct{}{}
+
 			alternativeGuardFinished := false
 			for !alternativeGuardFinished {
 				guardMoved, guardTurned = newG.move()
 				seenCoordinate := seenCoordinate{coordinate: newG.position, direction: newG.direction}
 				if _, ok := seen[seenCoordinate]; ok && guardMoved {
-					loops++
+					obstacles[guard.position] = struct{}{}
 					break
 				}
 				seen[seenCoordinate] = struct{}{}
@@ -132,7 +133,7 @@ func part2(guard *guard, input []string) int {
 		}
 		previousPosition = guard.position
 	}
-	return loops
+	return len(guard.visited), len(obstacles)
 }
 
 func main() {
