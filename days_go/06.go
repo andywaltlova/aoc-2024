@@ -16,23 +16,29 @@ type coordinate struct {
 	x, y int
 }
 
+type dirCoordinate struct {
+	coordinate coordinate
+	direction  int
+}
 type guard struct {
-	startPos  coordinate
-	startDir  int
-	position  coordinate
-	direction int
-	visited   map[coordinate]struct{}
-	grid      map[coordinate]string
+	startPos   coordinate
+	startDir   int
+	position   coordinate
+	direction  int
+	visited    map[coordinate]struct{}
+	visitedDir map[dirCoordinate]struct{}
+	grid       map[coordinate]string
 }
 
 func newGuard(start coordinate, direction int, grid map[coordinate]string) *guard {
 	g := guard{
-		startPos:  start,
-		startDir:  direction,
-		position:  start,
-		direction: direction,
-		visited:   make(map[coordinate]struct{}),
-		grid:      grid,
+		startPos:   start,
+		startDir:   direction,
+		position:   start,
+		direction:  direction,
+		visited:    make(map[coordinate]struct{}),
+		visitedDir: make(map[dirCoordinate]struct{}),
+		grid:       grid,
 	}
 	g.visited[start] = struct{}{}
 	return &g
@@ -46,26 +52,35 @@ func (g *guard) turnClockWise() {
 	}
 }
 
-func (g *guard) move() (moved bool, turned bool) {
+func (g *guard) move() (moved bool, turned bool, loop bool) {
 	direction, _ := directions[g.direction]
 	newCoordinates := coordinate{
 		x: g.position.x + direction[0],
 		y: g.position.y + direction[1],
 	}
 
-	gridLen := int(math.Sqrt(float64(len(g.grid))))
-	if newCoordinates.x < 0 || newCoordinates.x == gridLen || newCoordinates.y < 0 || newCoordinates.y == gridLen {
-		return false, false
-	}
-
 	if val, _ := g.grid[newCoordinates]; val == "#" {
 		g.turnClockWise()
-		return false, true
+		return false, true, false
 	}
 
 	g.position = newCoordinates
+
+	visitedDir := dirCoordinate{coordinate: g.position, direction: g.direction}
+	_, alreadyVisited := g.visitedDir[visitedDir]
+	if alreadyVisited {
+		return false, false, true
+	}
+
+	gridLen := int(math.Sqrt(float64(len(g.grid))))
+	if g.position.x < 0 || g.position.x == gridLen || g.position.y < 0 || g.position.y == gridLen {
+		return false, false, false
+	}
+
+	g.visitedDir[visitedDir] = struct{}{}
 	g.visited[g.position] = struct{}{}
-	return true, false
+
+	return true, false, false
 }
 
 func getGuard(grid map[coordinate]string) *guard {
@@ -92,15 +107,10 @@ func getGrid(grid []string) map[coordinate]string {
 func part1(guard *guard) int {
 	guardFinished := false
 	for !guardFinished {
-		guardMoved, guardTurned := guard.move()
+		guardMoved, guardTurned, _ := guard.move()
 		guardFinished = !(guardMoved || guardTurned)
 	}
 	return len(guard.visited)
-}
-
-type seenCoordinate struct {
-	coordinate coordinate
-	direction  int
 }
 
 func part2(guard *guard, input []string) (int, int) {
@@ -108,27 +118,23 @@ func part2(guard *guard, input []string) (int, int) {
 	guardFinished := false
 	previousPosition := guard.position
 	for !guardFinished {
-		guardMoved, guardTurned := guard.move()
+		guardMoved, guardTurned, _ := guard.move()
 		guardFinished = !(guardMoved || guardTurned)
-		if guardMoved && previousPosition != guard.startPos {
+		_, alreadyTried := obstacles[guard.position]
+		if guardMoved && previousPosition != guard.position && !alreadyTried {
 			newGrid := getGrid(input)
 			newGrid[guard.position] = "#"
-			newGrid[guard.startPos] = "."
-			newG := newGuard(previousPosition, guard.direction, newGrid)
-
-			seen := make(map[seenCoordinate]struct{})
-			seen[seenCoordinate{coordinate: previousPosition, direction: guard.direction}] = struct{}{}
+			newG := newGuard(guard.startPos, guard.startDir, newGrid)
 
 			alternativeGuardFinished := false
 			for !alternativeGuardFinished {
-				guardMoved, guardTurned = newG.move()
-				seenCoordinate := seenCoordinate{coordinate: newG.position, direction: newG.direction}
-				if _, ok := seen[seenCoordinate]; ok && guardMoved {
+				guardMoved, guardTurned, loop := newG.move()
+				alternativeGuardFinished = !(guardMoved || guardTurned)
+
+				if loop {
 					obstacles[guard.position] = struct{}{}
 					break
 				}
-				seen[seenCoordinate] = struct{}{}
-				alternativeGuardFinished = !(guardMoved || guardTurned)
 			}
 		}
 		previousPosition = guard.position
