@@ -98,6 +98,11 @@ func part1(guard *guard) int {
 	return len(guard.visited)
 }
 
+type seenCoordinate struct {
+	coordinate coordinate
+	direction  int
+}
+
 func part2(guard *guard, input []string) int {
 	loops := 0
 	guardFinished := false
@@ -111,13 +116,17 @@ func part2(guard *guard, input []string) int {
 			newGrid[guard.position] = "#"
 			newGrid[guard.startPos] = "."
 			newG := newGuard(previousPosition, guard.direction, newGrid)
+			seen := make(map[seenCoordinate]struct{})
+			seen[seenCoordinate{coordinate: previousPosition, direction: guard.direction}] = struct{}{}
 			alternativeGuardFinished := false
 			for !alternativeGuardFinished {
 				guardMoved, guardTurned = newG.move()
-				if newG.startDir == newG.direction && newG.position == newG.startPos {
+				seenCoordinate := seenCoordinate{coordinate: newG.position, direction: newG.direction}
+				if _, ok := seen[seenCoordinate]; ok && guardMoved {
 					loops++
 					break
 				}
+				seen[seenCoordinate] = struct{}{}
 				alternativeGuardFinished = !(guardMoved || guardTurned)
 			}
 		}
@@ -135,6 +144,6 @@ func main() {
 	guard1 := getGuard(grid)
 	fmt.Println(part1(guard1))
 
-	// guard2 := getGuard(grid)
-	// fmt.Println(part2(guard2, input))
+	guard2 := getGuard(grid)
+	fmt.Println(part2(guard2, input))
 }
