@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 )
 
 var directions = map[int][]int{
@@ -16,21 +17,24 @@ type coordinate struct {
 }
 
 type guard struct {
+	startPos  coordinate
+	startDir  int
 	position  coordinate
 	direction int
 	visited   map[coordinate]struct{}
-	grid      []string
+	grid      map[coordinate]string
 }
 
-func newGuard(x, y int, direction int, grid []string) *guard {
-	position := coordinate{x: x, y: y}
+func newGuard(start coordinate, direction int, grid map[coordinate]string) *guard {
 	g := guard{
-		position:  position,
+		startPos:  start,
+		startDir:  direction,
+		position:  start,
 		direction: direction,
 		visited:   make(map[coordinate]struct{}),
 		grid:      grid,
 	}
-	g.visited[position] = struct{}{}
+	g.visited[start] = struct{}{}
 	return &g
 }
 
@@ -42,58 +46,95 @@ func (g *guard) turnClockWise() {
 	}
 }
 
-func (g *guard) move() bool {
+func (g *guard) move() (moved bool, turned bool) {
 	direction, _ := directions[g.direction]
 	newCoordinates := coordinate{
 		x: g.position.x + direction[0],
 		y: g.position.y + direction[1],
 	}
 
-	if newCoordinates.x < 0 || newCoordinates.x == len(g.grid) || newCoordinates.y < 0 || newCoordinates.y == len(g.grid) {
-		return false
+	gridLen := int(math.Sqrt(float64(len(g.grid))))
+	if newCoordinates.x < 0 || newCoordinates.x == gridLen || newCoordinates.y < 0 || newCoordinates.y == gridLen {
+		return false, false
 	}
 
-	if string(g.grid[newCoordinates.x][newCoordinates.y]) == "#" {
+	if val, _ := g.grid[newCoordinates]; val == "#" {
 		g.turnClockWise()
-		return true
+		return false, true
 	}
 
 	g.position = newCoordinates
 	g.visited[g.position] = struct{}{}
-	return true
+	return true, false
 }
 
-func getGuard(grid []string) *guard {
+func getGuard(grid map[coordinate]string) *guard {
 	var guard *guard
-	for x, line := range grid {
-		for y, char := range line {
-			if string(char) == "^" {
-				guard = newGuard(x, y, 1, grid)
-				break
-			}
-
+	for coordinate, value := range grid {
+		if value == "^" {
+			guard = newGuard(coordinate, 1, grid)
+			break
 		}
 	}
 	return guard
 }
 
+func getGrid(grid []string) map[coordinate]string {
+	gridMap := make(map[coordinate]string)
+	for x, line := range grid {
+		for y, char := range line {
+			gridMap[coordinate{x: x, y: y}] = string(char)
+		}
+	}
+	return gridMap
+}
+
 func part1(guard *guard) int {
-	guardMoved := guard.move()
-	for guardMoved {
-		guardMoved = guard.move()
+	guardFinished := false
+	for !guardFinished {
+		guardMoved, guardTurned := guard.move()
+		guardFinished = !(guardMoved || guardTurned)
 	}
 	return len(guard.visited)
 }
 
-func part2(guard []string) int {
+func part2(guard *guard, input []string) int {
 	loops := 0
+	guardFinished := false
+	previousPosition := guard.position
+	for !guardFinished {
+		guardMoved, guardTurned := guard.move()
+		guardFinished = !(guardMoved || guardTurned)
+		// Try Brute force solution: try placing obstacle and see if guards return to start
+		if guardMoved {
+			newGrid := getGrid(input)
+			newGrid[guard.position] = "#"
+			newGrid[guard.startPos] = "."
+			newG := newGuard(previousPosition, guard.direction, newGrid)
+			alternativeGuardFinished := false
+			for !alternativeGuardFinished {
+				guardMoved, guardTurned = newG.move()
+				if newG.startDir == newG.direction && newG.position == newG.startPos {
+					loops++
+					break
+				}
+				alternativeGuardFinished = !(guardMoved || guardTurned)
+			}
+		}
+		previousPosition = guard.position
+	}
 	return loops
 }
 
 func main() {
 	filepath := "../data/06.txt"
-	content := getInputLines(filepath)
-	guard := getGuard(content)
-	fmt.Println(part1(guard))
-	fmt.Println(part2(content))
+
+	input := getInputLines(filepath)
+	grid := getGrid(input)
+
+	guard1 := getGuard(grid)
+	fmt.Println(part1(guard1))
+
+	// guard2 := getGuard(grid)
+	// fmt.Println(part2(guard2, input))
 }
