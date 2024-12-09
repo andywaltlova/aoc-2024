@@ -7,6 +7,16 @@ import (
 	"strconv"
 )
 
+func getNumsOnLine(filename string) []int {
+	var num []int
+	for _, s := range getInputLines(filename) {
+		for _, c := range s {
+			num = append(num, int(c-'0'))
+		}
+	}
+	return num
+}
+
 func getNumberInput(filename string) []int {
 	var result []int
 	for _, s := range getInputLines(filename) {
