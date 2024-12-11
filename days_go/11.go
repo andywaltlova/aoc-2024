@@ -35,12 +35,54 @@ func blink(stones []int) []int {
 	return newStones
 }
 
+func mapBlink(stones map[int]int) map[int]int {
+	newStones := map[int]int{}
+
+	add := func(key, incr int) {
+		if _, ok := newStones[key]; !ok {
+			newStones[key] = 0
+		}
+		newStones[key] += incr
+	}
+
+	for stone, count := range stones {
+		if stone == 0 {
+			add(1, count)
+		} else if digits := int(math.Log10(float64(stone)) + 1); digits%2 == 0 {
+			left, right := splitStone(stone)
+			add(left, count)
+			add(right, count)
+		} else {
+			add(stone*2024, count)
+		}
+	}
+	return newStones
+}
+
 func part1(nums []int, n int) int {
 	result := nums
 	for i := 0; i < n; i++ {
 		result = blink(result)
 	}
 	return len(result)
+}
+
+func part2(nums []int, n int) int {
+	cache := map[int]int{}
+
+	for _, v := range nums {
+		cache[v] = 1
+	}
+
+	for range n {
+		cache = mapBlink(cache)
+	}
+
+	sum := 0
+	for _, v := range cache {
+		sum += v
+	}
+	return sum
 }
 
 func main() {
@@ -52,5 +94,6 @@ func main() {
 	}
 	fmt.Println(part1(nums, 25))
 	// Well .. lets change the approach before my memory explodes
+	fmt.Println(part2(nums, 75))
 
 }
