@@ -10,6 +10,7 @@ type coordinate struct {
 
 type plot struct {
 	cells     []coordinate
+	sides     int
 	perimeter int
 	label     string
 }
@@ -77,9 +78,69 @@ func part1(plots []plot) int {
 	return result
 }
 
+func countSides(plot *plot) int {
+	// Oh wow, this took me a while, but the trick might be counting the corners
+	plotCellMap := make(map[coordinate]bool)
+	for _, cell := range plot.cells {
+		plotCellMap[cell] = true
+	}
+
+	s := 0
+	for _, cell := range plot.cells {
+		up := coordinate{cell.x, cell.y - 1}
+		down := coordinate{cell.x, cell.y + 1}
+		left := coordinate{cell.x - 1, cell.y}
+		right := coordinate{cell.x + 1, cell.y}
+
+		if !plotCellMap[up] && !plotCellMap[left] {
+			s++
+		}
+		if !plotCellMap[up] && !plotCellMap[right] {
+			s++
+		}
+		if !plotCellMap[down] && !plotCellMap[left] {
+			s++
+		}
+		if !plotCellMap[down] && !plotCellMap[right] {
+			s++
+		}
+		// Inner corners
+		diagonalDownRight := coordinate{cell.x + 1, cell.y + 1}
+		diagonalDownLeft := coordinate{cell.x - 1, cell.y + 1}
+		diagonalUpRight := coordinate{cell.x + 1, cell.y - 1}
+		diagonalUpLeft := coordinate{cell.x - 1, cell.y - 1}
+
+		if !plotCellMap[diagonalUpLeft] && plotCellMap[left] && plotCellMap[up] {
+			s++
+		}
+		if !plotCellMap[diagonalUpRight] && plotCellMap[right] && plotCellMap[up] {
+			s++
+		}
+		if !plotCellMap[diagonalDownLeft] && plotCellMap[left] && plotCellMap[down] {
+			s++
+		}
+		if !plotCellMap[diagonalDownRight] && plotCellMap[right] && plotCellMap[down] {
+			s++
+		}
+	}
+	plot.sides = s
+	return s
+}
+
+func part2(plots []plot) int {
+	result := 0
+	for _, plot := range plots {
+		countSides(&plot)
+		result += plot.sides * len(plot.cells)
+	}
+	return result
+}
+
 func main() {
 	grid := getInputLines("../data/12.txt")
 	plots := findPlots(grid)
 
 	fmt.Println(part1(plots))
+	fmt.Println(part2(plots))
+
 }
