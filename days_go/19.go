@@ -40,19 +40,40 @@ func isPossible(design string, patterns []string, cache map[string]bool) bool {
 	return false
 }
 
-func partOne(patterns []string, designs []string) int {
-	result := 0
+func countWays(design string, patterns []string, cache map[string]int) int {
+	ways := 0
+	way, ok := cache[design]
+	if ok {
+		return way
+	}
+
+	for _, p := range patterns {
+		if p == design {
+			ways++
+		} else if strings.HasPrefix(design, p) {
+			ways += countWays(strings.TrimPrefix(design, p), patterns, cache)
+		}
+	}
+	cache[design] = ways
+	return ways
+}
+
+func analyze(patterns []string, designs []string) (int, int) {
+	possible := 0
+	ways := 0
 	cache := make(map[string]bool)
 	for _, design := range designs {
 		if isPossible(design, patterns, cache) {
-			result++
+			// or just omit isPossible and use countWays (0 = no way to make it)
+			possible++
+			ways += countWays(design, patterns, make(map[string]int))
 		}
 	}
-	return result
+	return possible, ways
 }
 
 func main() {
 	patterns, designs, _ := parseInput("../data/19.txt")
-	possible := partOne(patterns, designs)
-	fmt.Println(possible)
+	possible, ways := analyze(patterns, designs)
+	fmt.Println(possible, ways)
 }
