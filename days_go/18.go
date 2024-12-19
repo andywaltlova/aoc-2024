@@ -129,4 +129,13 @@ func main() {
 	goal := coordinate{70, 70}
 	steps := aStar(grid, start, goal)
 	fmt.Println(steps)
+
+	for i := 1024; i < len(coordinates); i++ {
+		grid[coordinates[i]] = true
+		steps = aStar(grid, start, goal)
+		if steps == -1 {
+			fmt.Println(coordinates[i])
+			break
+		}
+	}
 }
