@@ -40,7 +40,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return x
 }
 
-func aStar(grid []string) int {
+func aStar(grid [][]rune) int {
 	rows := len(grid)
 	cols := len(grid[0])
 
@@ -104,12 +104,61 @@ func aStar(grid []string) int {
 	return -1
 }
 
-func main() {
-	grid := getInputLines("../data/20_test.txt")
-	result := aStar(grid)
-	if result == -1 {
-		fmt.Println("No path found")
-	} else {
-		fmt.Printf("Shortest path without wall-breaking: %d\n", result)
+func shorterPaths(grid []string) (int, map[[2]int]int) {
+	mutableGrid := make([][]rune, len(grid))
+	for i, row := range grid {
+		mutableGrid[i] = []rune(row) // Convert each string to []rune
 	}
+
+	rows := len(mutableGrid)
+	cols := len(mutableGrid[0])
+
+	originalPath := aStar(mutableGrid)
+
+	if originalPath == -1 {
+		return 0, nil // No valid path exists
+	}
+
+	fmt.Printf("Original path: %d\n", originalPath)
+
+	var walls [][2]int
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
+			if mutableGrid[i][j] == '#' {
+				walls = append(walls, [2]int{i, j})
+			}
+		}
+	}
+
+	shorterPathCount := 0
+	scores := make(map[[2]int]int)
+
+	for _, wall := range walls {
+		wallX, wallY := wall[0], wall[1]
+
+		mutableGrid[wallX][wallY] = '.'
+		newPath := aStar(mutableGrid)
+		mutableGrid[wallX][wallY] = '#'
+
+		if newPath != -1 && newPath < originalPath {
+			shorterPathCount++
+			scores[wall] = originalPath - newPath
+		}
+	}
+
+	return shorterPathCount, scores
+}
+
+func main() {
+	grid := getInputLines("../data/20.txt")
+	_, scores := shorterPaths(grid)
+
+	treshold := 100
+	shorterPaths := 0
+	for _, score := range scores {
+		if score >= treshold {
+			shorterPaths++
+		}
+	}
+	fmt.Printf("Number of shorter paths that save at least 100 picoseconds: %d\n", shorterPaths)
 }
