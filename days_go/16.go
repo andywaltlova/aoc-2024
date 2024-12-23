@@ -37,7 +37,7 @@ func (pq *priorityQueue) Pop() interface{} {
 	return item
 }
 
-func dijkstra(maze []string) ([]state, int) {
+func dijkstra(maze []string) ([][]state, int) {
 	rows, cols := len(maze), len(maze[0])
 	startX, startY := 0, 0
 	endX, endY := 0, 0
@@ -54,26 +54,30 @@ func dijkstra(maze []string) ([]state, int) {
 		}
 	}
 
-	// Visited map to track (x, y, dir) states
 	visited := make(map[[3]int]bool)
-
 	distance := make(map[state]int)
-	predecessor := make(map[state]*state) // To track the path
+	predecessors := make(map[state][]state) // Support multiple predecessors
 	pq := &priorityQueue{}
 	heap.Init(pq)
 
-	// facing East (0)
 	initial := state{startX, startY, 0, 0}
 	heap.Push(pq, &initial)
 	distance[initial] = 0
 
-	var endState *state
+	allGoalStates := []state{}
+	minGoalCost := math.MaxInt32
 
 	for pq.Len() > 0 {
 		curr := heap.Pop(pq).(*state)
+
 		if curr.x == endX && curr.y == endY {
-			endState = curr
-			break
+			if curr.score < minGoalCost {
+				minGoalCost = curr.score
+				allGoalStates = []state{*curr}
+			} else if curr.score == minGoalCost {
+				allGoalStates = append(allGoalStates, *curr)
+			}
+			continue
 		}
 
 		stateKey := [3]int{curr.x, curr.y, curr.dir}
@@ -93,46 +97,68 @@ func dijkstra(maze []string) ([]state, int) {
 			nx, ny := curr.x+dx, curr.y+dy
 
 			if nx >= 0 && ny >= 0 && nx < cols && ny < rows && maze[ny][nx] != '#' {
-				newState := state{nx, ny, newDir, curr.score + 1 + rotationCost}
-				if oldCost, ok := distance[newState]; !ok || newState.score <= oldCost {
-					distance[newState] = newState.score
-					heap.Push(pq, &newState)
+				newScore := curr.score + 1 + rotationCost
+				newState := state{nx, ny, newDir, newScore}
 
-					predecessor[newState] = curr // Track the predecessor
+				oldCost, exists := distance[newState]
+
+				if !exists || newScore < oldCost {
+					distance[newState] = newScore
+					heap.Push(pq, &state{nx, ny, newDir, newScore})
+					predecessors[newState] = []state{*curr}
+				} else if newScore == oldCost {
+					// Add as an alternative predecessor
+					predecessors[newState] = append(predecessors[newState], *curr)
 				}
 			}
 		}
 	}
 
-	// Reconstruct the path
-	path := []state{}
-	for s := endState; s != nil; s = predecessor[*s] {
-		path = append([]state{*s}, path...) // Prepend to build path in order
+	// Reconstruct all paths
+	var allPaths [][]state
+	for _, goalState := range allGoalStates {
+		var paths [][]state
+		reconstructPaths(&paths, []state{}, goalState, predecessors)
+		allPaths = append(allPaths, paths...)
 	}
 
-	if endState == nil {
-		return nil, math.MaxInt32 // No path found
+	return allPaths, minGoalCost
+}
+
+func reconstructPaths(paths *[][]state, currentPath []state, curr state, predecessors map[state][]state) {
+	currentPath = append([]state{curr}, currentPath...)
+	if preds, ok := predecessors[curr]; ok {
+		for _, pred := range preds {
+			reconstructPaths(paths, currentPath, pred, predecessors)
+		}
+	} else {
+		// start
+		*paths = append(*paths, currentPath)
 	}
-	return path, endState.score
 }
 
 func main() {
-	maze := getInputLines("../data/16_test.txt")
-	path, cost := dijkstra(maze)
+	maze := getInputLines("../data/16.txt")
+	paths, cost := dijkstra(maze)
 	fmt.Println("Cost:", cost)
-	fmt.Println("Path:", len(path))
+
+	uniqueCoords := make(map[[2]int]bool)
+	for _, path := range paths {
+		for _, state := range path {
+			uniqueCoords[[2]int{state.x, state.y}] = true
+		}
+	}
+	fmt.Println("Unique coordinates:", len(uniqueCoords))
 
 	// Print the path
-	for x := 0; x < len(maze[0]); x++ {
-		for y := 0; y < len(maze); y++ {
-			tile := maze[x][y]
-			for _, state := range path {
-				if state.x == y && state.y == x {
-					tile = 'o'
-				}
-			}
-			fmt.Printf("%c", tile)
-		}
-		fmt.Println()
-	}
+	// for x := 0; x < len(maze[0]); x++ {
+	// 	for y := 0; y < len(maze); y++ {
+	// 		tile := maze[x][y]
+	// 		if uniqueCoords[[2]int{y, x}] {
+	// 			tile = 'O'
+	// 		}
+	// 		fmt.Printf("%c", tile)
+	// 	}
+	// 	fmt.Println()
+	// }
 }
