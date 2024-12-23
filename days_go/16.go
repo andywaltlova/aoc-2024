@@ -37,7 +37,7 @@ func (pq *priorityQueue) Pop() interface{} {
 	return item
 }
 
-func dijkstra(maze []string) int {
+func dijkstra(maze []string) ([]state, int) {
 	rows, cols := len(maze), len(maze[0])
 	startX, startY := 0, 0
 	endX, endY := 0, 0
@@ -58,6 +58,7 @@ func dijkstra(maze []string) int {
 	visited := make(map[[3]int]bool)
 
 	distance := make(map[state]int)
+	predecessor := make(map[state]*state) // To track the path
 	pq := &priorityQueue{}
 	heap.Init(pq)
 
@@ -66,10 +67,13 @@ func dijkstra(maze []string) int {
 	heap.Push(pq, &initial)
 	distance[initial] = 0
 
+	var endState *state
+
 	for pq.Len() > 0 {
 		curr := heap.Pop(pq).(*state)
 		if curr.x == endX && curr.y == endY {
-			return curr.score
+			endState = curr
+			break
 		}
 
 		stateKey := [3]int{curr.x, curr.y, curr.dir}
@@ -90,17 +94,45 @@ func dijkstra(maze []string) int {
 
 			if nx >= 0 && ny >= 0 && nx < cols && ny < rows && maze[ny][nx] != '#' {
 				newState := state{nx, ny, newDir, curr.score + 1 + rotationCost}
-				if oldCost, ok := distance[newState]; !ok || newState.score < oldCost {
+				if oldCost, ok := distance[newState]; !ok || newState.score <= oldCost {
 					distance[newState] = newState.score
 					heap.Push(pq, &newState)
+
+					predecessor[newState] = curr // Track the predecessor
 				}
 			}
 		}
 	}
-	return math.MaxInt32
+
+	// Reconstruct the path
+	path := []state{}
+	for s := endState; s != nil; s = predecessor[*s] {
+		path = append([]state{*s}, path...) // Prepend to build path in order
+	}
+
+	if endState == nil {
+		return nil, math.MaxInt32 // No path found
+	}
+	return path, endState.score
 }
 
 func main() {
-	maze := getInputLines("../data/16.txt")
-	fmt.Println(dijkstra(maze))
+	maze := getInputLines("../data/16_test.txt")
+	path, cost := dijkstra(maze)
+	fmt.Println("Cost:", cost)
+	fmt.Println("Path:", len(path))
+
+	// Print the path
+	for x := 0; x < len(maze[0]); x++ {
+		for y := 0; y < len(maze); y++ {
+			tile := maze[x][y]
+			for _, state := range path {
+				if state.x == y && state.y == x {
+					tile = 'o'
+				}
+			}
+			fmt.Printf("%c", tile)
+		}
+		fmt.Println()
+	}
 }
